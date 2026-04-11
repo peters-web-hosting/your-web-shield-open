@@ -6,16 +6,16 @@ Analyze web server logs and generate risk-focused output files.
 
 1. Create and activate a virtual environment.
 2. Install dependencies.
-3. Start the Streamlit UI.
+3. Start the Flask UI.
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-streamlit run app.py
+python app.py
 ```
 
-Then open the URL shown in your terminal (normally `http://localhost:8501`), upload a log file, and click **Analyze uploaded file**.
+Then open `http://localhost:8501`, upload a log file, and click **Analyze uploaded file**.
 
 ## Community API configuration
 
