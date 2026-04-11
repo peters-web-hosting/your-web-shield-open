@@ -1,7 +1,5 @@
 import ipaddress
-import requests
 import cachetools
-from datetime import timedelta
 
 from helpers.Database import Database
 
