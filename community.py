@@ -10,8 +10,14 @@ load_dotenv()
 def _enabled() -> bool:
     opt_in = os.getenv("COMMUNITY_OPT_IN", "false").strip().lower()
     api_url = os.getenv("COMMUNITY_API_URL", "").strip()
+    return opt_in in {"1", "true", "yes", "on"} and bool(api_url)
+
+
+def _headers() -> dict:
     api_key = os.getenv("COMMUNITY_API_KEY", "").strip()
-    return opt_in in {"1", "true", "yes", "on"} and bool(api_url) and bool(api_key)
+    if api_key:
+        return {"x-api-key": api_key}
+    return {}
 
 
 def submit(data: dict) -> bool:
@@ -22,7 +28,7 @@ def submit(data: dict) -> bool:
         response = requests.post(
             f"{os.getenv('COMMUNITY_API_URL', '').rstrip('/')}/submit",
             json=data,
-            headers={"x-api-key": os.getenv("COMMUNITY_API_KEY", "")},
+            headers=_headers(),
             timeout=5,
         )
         return response.ok
@@ -38,7 +44,7 @@ def fetch_records() -> list:
     try:
         response = requests.get(
             f"{os.getenv('COMMUNITY_API_URL', '').rstrip('/')}/records",
-            headers={"x-api-key": os.getenv("COMMUNITY_API_KEY", "")},
+            headers=_headers(),
             timeout=5,
         )
         if not response.ok:
