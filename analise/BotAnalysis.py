@@ -6,7 +6,6 @@ import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
-from scipy import sparse
 
 class UserAgentClassifier(nn.Module):
     def __init__(self, input_size, num_classes):
