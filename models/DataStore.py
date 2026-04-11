@@ -36,9 +36,6 @@ class DataStore:
     def add_reported_ip(self, ip):
         self.reported_ips.append(ip)
 
-    def set_risk(self, risk):
-        self.risk = risk
-
     def get_risk(self):
         return self.risk
 

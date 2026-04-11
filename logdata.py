@@ -11,7 +11,6 @@ from helpers.Bing import Bingbot
 from models.DataStore import DataStore
 from helpers.Database import Database
 from loggers.LogToDB import LogToDB
-from helpers.Database import Database
 from analise.Risk import Risk
 from helpers.Reader import Reader
 from helpers.IPFunctions import IPFunctions
@@ -108,8 +107,6 @@ class LogData:
         logging.basicConfig(level=logging.ERROR, filename='errors.log',  format='%(asctime)s - %(levelname)s - %(message)s',
                             filemode='a')
         countMap = {}
-        totalHits = len(self.dataStore.get_hits())
-        nuber_done = 0
 
         # Get unique IP addresses to process
         unique_ips = set(hit.iPaddress for hit in self.dataStore.get_hits())
@@ -127,13 +124,8 @@ class LogData:
                     ip), loggerWithFile, self.google_bot, self.bing_bot, self.known_bot, self.botAnalsis, self.database)
 
                 with lock:
-                    count = self.dataStore.get_occurrences_of_ip().get(ip, 0)
                     self.dataStore.add_risk(ip, risk)
                     countMap[ip] = risk
-                    nonlocal nuber_done
-                    nuber_done += count
-                    left = totalHits - nuber_done
-                    # print("ips left: " + str(left))
 
                 return ip, risk
             except Exception as e:
@@ -148,7 +140,7 @@ class LogData:
             for future in concurrent.futures.as_completed(futures):
                 ip = futures[future]
                 try:
-                    result = future.result()
+                    future.result()
                 except Exception as e:
                     logging.error(f"Exception for IP {ip}: {str(e)}")
 

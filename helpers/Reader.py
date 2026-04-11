@@ -16,7 +16,6 @@ class Reader:
 
         self.first_date = None
         self.last_date = None
-        hits_to_add = []
         d = open("user_agents.csv", 'a')
         with open(self.log_file, 'r') as file:
             for line in file:
