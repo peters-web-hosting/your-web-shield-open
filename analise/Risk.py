@@ -1,9 +1,5 @@
 import math
 import random
-import time
-
-from analise.BotAnalysis import BotAnalysis
-from helpers.Database import Database
 from helpers.IPFunctions import IPFunctions
 from helpers.Modifiers import Modifiers
 

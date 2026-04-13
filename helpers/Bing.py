@@ -1,7 +1,6 @@
 import ipaddress
 import requests
 import cachetools
-from datetime import timedelta
 
 
 class Bingbot:
