@@ -1,3 +1,4 @@
+import logging
 import pathlib
 
 from flask import Flask, redirect, render_template_string, request, send_file, url_for
@@ -86,7 +87,11 @@ def analyze():
     destination = FILES_DIR / safe_name
     uploaded_file.save(destination)
 
-    LogData(destination.name)
+    try:
+        LogData(destination.name)
+    except Exception:
+        logging.exception("Failed to analyze uploaded file: %s", safe_name)
+        return redirect(url_for("index", error="Analysis failed. Please check your log format and try again."))
 
     return redirect(url_for("index", message=f"Analysis complete for {safe_name}."))
 
