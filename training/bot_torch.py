@@ -1,14 +1,35 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from pathlib import Path
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 
+
+def load_user_agent_data(path='user_agents.csv'):
+    records = []
+    with Path(path).open('r', encoding='utf-8') as source:
+        next(source, None)
+        for line in source:
+            row = line.strip()
+            if not row or ',' not in row:
+                continue
+
+            user_agent, label = row.rsplit(',', 1)
+            try:
+                label_value = int(label.strip())
+            except ValueError:
+                continue
+
+            records.append({'user_agent': user_agent.strip(), 'label': label_value})
+
+    return pd.DataFrame(records)
+
 # Load the data
-data = pd.read_csv('user_agents.csv')
+data = load_user_agent_data('user_agents.csv')
 # Preprocess user agents
 vectorizer = CountVectorizer()
 X = vectorizer.fit_transform(data['user_agent']).toarray()
