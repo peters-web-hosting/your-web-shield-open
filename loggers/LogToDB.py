@@ -1,6 +1,6 @@
 ﻿from helpers.Database import Database
 from helpers.IPFunctions import IPFunctions
-from community import _enabled
+from db import _enabled
 
 
 class LogToDB():

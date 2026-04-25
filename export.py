@@ -1,6 +1,6 @@
 ﻿import json
 
-from community import fetch_records
+from db import fetch_records
 
 
 if __name__ == "__main__":
