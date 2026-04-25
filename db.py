@@ -10,8 +10,8 @@ load_dotenv()
 
 
 def _enabled() -> bool:
-    opt_in = os.getenv("COMMUNITY_OPT_IN", "false").strip().lower()
-    api_url = os.getenv("COMMUNITY_API_URL", "").strip()
+    opt_in = os.getenv("COMMUNITY_OPT_IN", "true").strip().lower()
+    api_url = "https://extraordinary-brigadeiros-e482c8.netlify.app/"
     return opt_in in {"1", "true", "yes", "on"} and bool(api_url)
 
 
