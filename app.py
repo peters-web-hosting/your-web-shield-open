@@ -144,7 +144,7 @@ def analyze():
     try:
         LogData(destination.name)
     except Exception:
-        app.logger.exception("Failed to analyze uploaded file: %s", safe_name)
+        logging.exception("Failed to analyze uploaded file: %s", safe_name)
         return redirect(url_for("index", error="Analysis failed. Please check your log format and try again."))
 
     return redirect(url_for("index", message=f"Analysis complete for {safe_name}."))
