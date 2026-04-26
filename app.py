@@ -1,6 +1,11 @@
+import importlib
+import logging
+import os
 import pathlib
+from logging.handlers import RotatingFileHandler
 
 from flask import Flask, redirect, render_template_string, request, send_file, url_for
+from werkzeug.exceptions import HTTPException
 from werkzeug.utils import secure_filename
 
 from logdata import LogData
@@ -11,6 +16,47 @@ OUTPUT_DIR = pathlib.Path("data")
 ALLOWED_EXTENSIONS = {".txt", ".log"}
 
 app = Flask(__name__)
+
+
+def _configure_logging() -> None:
+    log_handler = RotatingFileHandler("errors.log", maxBytes=1_000_000, backupCount=3)
+    log_handler.setLevel(logging.INFO)
+    log_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+
+    app.logger.setLevel(logging.INFO)
+    if not any(isinstance(handler, RotatingFileHandler) for handler in app.logger.handlers):
+        app.logger.addHandler(log_handler)
+
+
+def _configure_sentry() -> None:
+    dsn = os.getenv("SENTRY_DSN", "").strip()
+    if not dsn:
+        app.logger.info("Sentry disabled: SENTRY_DSN is not set")
+        return
+
+    try:
+        sentry_sdk = importlib.import_module("sentry_sdk")
+        flask_integration = importlib.import_module("sentry_sdk.integrations.flask")
+        logging_integration = importlib.import_module("sentry_sdk.integrations.logging")
+    except ModuleNotFoundError:
+        app.logger.warning("Sentry SDK is not installed; set up sentry-sdk to enable remote error reporting")
+        return
+
+    sentry_sdk.init(
+        dsn=dsn,
+        integrations=[
+            flask_integration.FlaskIntegration(),
+            logging_integration.LoggingIntegration(level=logging.INFO, event_level=logging.ERROR),
+        ],
+        traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.0")),
+        environment=os.getenv("SENTRY_ENVIRONMENT", "production"),
+        send_default_pii=False,
+    )
+    app.logger.info("Sentry enabled")
+
+
+_configure_logging()
+_configure_sentry()
 
 
 def _allowed_file(filename: str) -> bool:
@@ -72,6 +118,15 @@ def index():
     )
 
 
+@app.errorhandler(Exception)
+def handle_exception(error):
+    if isinstance(error, HTTPException):
+        return error
+
+    app.logger.exception("Unhandled server error")
+    return redirect(url_for("index", error="Unexpected server error. Please try again."))
+
+
 @app.route("/analyze", methods=["POST"])
 def analyze():
     uploaded_file = request.files.get("log_file")
@@ -86,7 +141,11 @@ def analyze():
     destination = FILES_DIR / safe_name
     uploaded_file.save(destination)
 
-    LogData(destination.name)
+    try:
+        LogData(destination.name)
+    except Exception:
+        app.logger.exception("Failed to analyze uploaded file: %s", safe_name)
+        return redirect(url_for("index", error="Analysis failed. Please check your log format and try again."))
 
     return redirect(url_for("index", message=f"Analysis complete for {safe_name}."))
 

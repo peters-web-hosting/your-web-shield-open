@@ -1,11 +1,32 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from pathlib import Path
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
+
+
+def load_user_agent_data(path='user_agents.csv'):
+    records = []
+    with Path(path).open('r', encoding='utf-8') as source:
+        next(source, None)  # Skip header
+        for line in source:
+            row = line.strip()
+            if not row or ',' not in row:
+                continue
+
+            user_agent, label = row.rsplit(',', 1)
+            try:
+                label_value = int(label.strip())
+            except ValueError:
+                continue
+
+            records.append({'user_agent': user_agent.strip(), 'label': label_value})
+
+    return pd.DataFrame(records)
 
 class UserAgentClassifier(nn.Module):
     def __init__(self, input_size, num_classes):
@@ -29,7 +50,7 @@ class UserAgentDataset(Dataset):
 class BotAnalysis:
     def __init__(self, train=False):
         if train:
-            data = pd.read_csv('user_agents.csv')
+            data = load_user_agent_data('user_agents.csv')
             self.vectorizer = CountVectorizer()
             X = self.vectorizer.fit_transform(data['user_agent'])
 

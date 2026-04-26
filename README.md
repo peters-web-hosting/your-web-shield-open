@@ -42,3 +42,7 @@ docker run --rm -p 8501:8501 your-web-shield-open
 ```
 
 Open `http://localhost:8501` and use the upload UI.
+
+## Error reporting (maintainer-only)
+
+Sentry is configured by the project maintainer in deployment secrets. End users do not need to set any Sentry values when running local analysis.

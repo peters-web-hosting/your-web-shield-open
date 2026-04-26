@@ -20,6 +20,19 @@ from analise.Analise import Analise
 from helpers.google import GoogleBot
 
 
+_BOT_ANALYSIS = None
+_BOT_ANALYSIS_LOCK = threading.Lock()
+
+
+def get_bot_analysis():
+    global _BOT_ANALYSIS
+    if _BOT_ANALYSIS is None:
+        with _BOT_ANALYSIS_LOCK:
+            if _BOT_ANALYSIS is None:
+                _BOT_ANALYSIS = BotAnalysis(train=True)
+    return _BOT_ANALYSIS
+
+
 class LogData:
     def __init__(self, specified_file=None):
         self.dataStore: DataStore = DataStore()
@@ -28,7 +41,7 @@ class LogData:
         self.google_bot: GoogleBot = GoogleBot()
         self.bing_bot = Bingbot()
         self.known_bot = KnownBots()
-        self.botAnalsis = BotAnalysis(train=True)
+        self.botAnalsis = get_bot_analysis()
         self.database = Database()
         folder = "files"
 
