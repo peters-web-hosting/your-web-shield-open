@@ -5,3 +5,4 @@ pandas==2.2.3
 scikit-learn==1.6.1
 cachetools==5.5.2
 python-dotenv==1.1.0
+sentry-sdk[flask]==2.18.0
