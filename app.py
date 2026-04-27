@@ -1,9 +1,9 @@
-import importlib
 import logging
 import os
 import pathlib
 from logging.handlers import RotatingFileHandler
 
+import sentry_sdk
 from flask import Flask, redirect, render_template_string, request, send_file, url_for
 from werkzeug.exceptions import HTTPException
 from werkzeug.utils import secure_filename
@@ -15,48 +15,52 @@ FILES_DIR = pathlib.Path("files")
 OUTPUT_DIR = pathlib.Path("data")
 ALLOWED_EXTENSIONS = {".txt", ".log"}
 
+
+def _configure_sentry() -> None:
+    dsn = os.getenv("SENTRY_DSN", "https://f70e5a0c56afe61f5a1bba24f53fe8bf@o4507630206189568.ingest.de.sentry.io/4511286871523408").strip()
+    if not dsn:
+        return
+
+    try:
+        import sentry_sdk as _sentry
+    except ImportError:
+        logging.warning(
+            "Sentry SDK is not installed; "
+            "run 'pip install sentry-sdk[flask]' to enable remote error reporting"
+        )
+        return
+
+    _sentry.init(
+        dsn=dsn,
+        traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.0")),
+        environment=os.getenv("SENTRY_ENVIRONMENT", "production"),
+        send_default_pii=False,
+        # FlaskIntegration and LoggingIntegration are auto-enabled by the SDK;
+        # add them here only if you need to override their defaults, e.g.:
+        # integrations=[FlaskIntegration(transaction_style="url")],
+    )
+
+
+# Sentry must be initialised before Flask so the auto-enabled FlaskIntegration
+# can instrument the app correctly.
+_configure_sentry()
+
 app = Flask(__name__)
 
 
 def _configure_logging() -> None:
     log_handler = RotatingFileHandler("errors.log", maxBytes=1_000_000, backupCount=3)
     log_handler.setLevel(logging.INFO)
-    log_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+    log_handler.setFormatter(
+        logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+    )
 
     app.logger.setLevel(logging.INFO)
-    if not any(isinstance(handler, RotatingFileHandler) for handler in app.logger.handlers):
+    if not any(isinstance(h, RotatingFileHandler) for h in app.logger.handlers):
         app.logger.addHandler(log_handler)
 
 
-def _configure_sentry() -> None:
-    dsn = os.getenv("SENTRY_DSN", "").strip()
-    if not dsn:
-        app.logger.info("Sentry disabled: SENTRY_DSN is not set")
-        return
-
-    try:
-        sentry_sdk = importlib.import_module("sentry_sdk")
-        flask_integration = importlib.import_module("sentry_sdk.integrations.flask")
-        logging_integration = importlib.import_module("sentry_sdk.integrations.logging")
-    except ModuleNotFoundError:
-        app.logger.warning("Sentry SDK is not installed; set up sentry-sdk to enable remote error reporting")
-        return
-
-    sentry_sdk.init(
-        dsn=dsn,
-        integrations=[
-            flask_integration.FlaskIntegration(),
-            logging_integration.LoggingIntegration(level=logging.INFO, event_level=logging.ERROR),
-        ],
-        traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.0")),
-        environment=os.getenv("SENTRY_ENVIRONMENT", "production"),
-        send_default_pii=False,
-    )
-    app.logger.info("Sentry enabled")
-
-
 _configure_logging()
-_configure_sentry()
 
 
 def _allowed_file(filename: str) -> bool:
